@@ -1,0 +1,12 @@
+.hello-world {
+  padding: 1rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+}
+
+.hello-world h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
