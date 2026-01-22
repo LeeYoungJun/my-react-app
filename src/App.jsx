@@ -13,6 +13,7 @@ function App() {
     return (
       <>
         <button
+          type="button"
           onClick={() => setShowLogin(false)}
           className="fixed top-4 right-4 z-50 px-4 py-2 bg-white rounded-lg shadow-lg text-gray-800 font-medium hover:bg-gray-100"
         >
@@ -26,10 +27,10 @@ function App() {
   return (
     <>
       <div>
-        <a href="https://vite.dev" target="_blank">
+        <a href="https://vite.dev" target="_blank" rel="noreferrer">
           <img src={viteLogo} className="logo" alt="Vite logo" />
         </a>
-        <a href="https://react.dev" target="_blank">
+        <a href="https://react.dev" target="_blank" rel="noreferrer">
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
@@ -37,14 +38,20 @@ function App() {
       <HelloWorld />
       <HelloWorld name="Vite" />
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+        <button type="button" onClick={() => setCount((count) => count + 1)}>
+          count is 
+          {' '}
+          {count}
         </button>
-        <button onClick={() => setShowLogin(true)} style={{ marginLeft: '1rem' }}>
+        <button type="button" onClick={() => setShowLogin(true)} style={{ marginLeft: '1rem' }}>
           Show Login
         </button>
         <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+          Edit 
+          {' '}
+          <code>src/App.jsx</code>
+          {' '}
+          and save to test HMR
         </p>
       </div>
       <p className="read-the-docs">
