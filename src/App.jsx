@@ -29,7 +29,7 @@ function App() {
         onClick={() => setShowLogin(true)}
         className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all text-lg"
       >
-        로그인
+        어서오세요
       </button>
     </div>
   )
