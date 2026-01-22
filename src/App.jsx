@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import HelloWorld from './components/HelloWorld'
 import LoginForm from './components/LoginForm'
 import './App.css'
 
@@ -21,7 +22,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8">
+      <HelloWorld />
       <button
         type="button"
         onClick={() => setShowLogin(true)}
