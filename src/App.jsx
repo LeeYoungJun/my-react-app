@@ -1,12 +1,8 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import HelloWorld from './components/HelloWorld'
 import LoginForm from './components/LoginForm'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
   const [showLogin, setShowLogin] = useState(false)
 
   if (showLogin) {
@@ -25,39 +21,15 @@ function App() {
   }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <HelloWorld />
-      <HelloWorld name="Vite" />
-      <div className="card">
-        <button type="button" onClick={() => setCount((count) => count + 1)}>
-          count is 
-          {' '}
-          {count}
-        </button>
-        <button type="button" onClick={() => setShowLogin(true)} style={{ marginLeft: '1rem' }}>
-          Show Login
-        </button>
-        <p>
-          Edit 
-          {' '}
-          <code>src/App.jsx</code>
-          {' '}
-          and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="min-h-screen flex items-center justify-center">
+      <button
+        type="button"
+        onClick={() => setShowLogin(true)}
+        className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all text-lg"
+      >
+        로그인
+      </button>
+    </div>
   )
 }
 
