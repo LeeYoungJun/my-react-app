@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react'
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import * as XLSX from 'xlsx'
 import './Monday.css'
 
 const MONDAY_API_URL = 'https://api.monday.com/v2'
@@ -151,6 +152,68 @@ function Monday() {
     return stats
   }, [groups])
 
+  const exportToExcel = useCallback(() => {
+    const subitemNames = Object.keys(subitemStats).sort()
+
+    // 헤더 행 생성
+    const header1 = ['이름', '아이템']
+    const header2 = ['', '']
+    MONTH_COLUMNS.forEach((month) => {
+      header1.push(month, '')
+      header2.push('시간', 'M/M')
+    })
+    header1.push('합계')
+    header2.push('시간')
+
+    // 데이터 행 생성
+    const dataRows = subitemNames.map((name) => {
+      const personStats = subitemStats[name]
+      const total = MONTH_COLUMNS.reduce(
+        (sum, month) => sum + personStats.months[month],
+        0
+      )
+      const itemList = Array.from(personStats.items).join(', ')
+
+      const row = [name, itemList]
+      MONTH_COLUMNS.forEach((month) => {
+        const value = personStats.months[month]
+        const mm = calculateMM(value)
+        row.push(value > 0 ? value : 0, mm > 0 ? mm : 0)
+      })
+      row.push(total > 0 ? total : 0)
+
+      return row
+    })
+
+    // 워크시트 생성
+    const wsData = [header1, header2, ...dataRows]
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+    // 셀 병합 (월별 헤더)
+    const merges = []
+    let colIdx = 2
+    MONTH_COLUMNS.forEach(() => {
+      merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 1 } })
+      colIdx += 2
+    })
+    ws['!merges'] = merges
+
+    // 열 너비 설정
+    ws['!cols'] = [
+      { wch: 15 }, // 이름
+      { wch: 40 }, // 아이템
+      ...MONTH_COLUMNS.flatMap(() => [{ wch: 8 }, { wch: 8 }]),
+      { wch: 10 }, // 합계
+    ]
+
+    // 워크북 생성 및 다운로드
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '월별 작업 시간')
+
+    const today = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(wb, `${boardName}_${today}.xlsx`)
+  }, [subitemStats, boardName])
+
   if (loading) {
     return (
       <div className="monday-container">
@@ -179,8 +242,20 @@ function Monday() {
   return (
     <div className="monday-container">
       <div className="monday-board">
-        <h1 className="text-2xl font-bold text-white mb-6">{boardName}</h1>
-        <h2 className="text-lg text-gray-400 mb-4">사용자 월별 작업 시간</h2>
+        <div className="monday-header">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">{boardName}</h1>
+            <h2 className="text-lg text-gray-400">사용자 월별 작업 시간</h2>
+          </div>
+          <button
+            type="button"
+            className="export-btn"
+            onClick={exportToExcel}
+            disabled={Object.keys(subitemStats).length === 0}
+          >
+            Excel 다운로드
+          </button>
+        </div>
 
         {subitemNames.length === 0 ? (
           <p className="text-gray-500">하위 아이템이 없습니다.</p>
