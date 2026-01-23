@@ -136,11 +136,13 @@ function Monday() {
       group.items_page.items.forEach((item) => {
         item.subitems?.forEach((subitem) => {
           const name = subitem.name
+          const itemKey = `[${group.title}] ${item.name}`
 
           if (!stats[name]) {
             stats[name] = {
               months: {},
               items: new Set(),
+              itemMonths: {},
             }
             MONTH_COLUMNS.forEach((month) => {
               stats[name].months[month] = 0
@@ -148,13 +150,22 @@ function Monday() {
           }
 
           // 아이템명 추가 (그룹명 포함)
-          stats[name].items.add(`[${group.title}] ${item.name}`)
+          stats[name].items.add(itemKey)
+
+          // 아이템별 월별 시간 초기화
+          if (!stats[name].itemMonths[itemKey]) {
+            stats[name].itemMonths[itemKey] = {}
+            MONTH_COLUMNS.forEach((month) => {
+              stats[name].itemMonths[itemKey][month] = 0
+            })
+          }
 
           subitem.column_values?.forEach((col) => {
             const title = col.column?.title
             if (MONTH_COLUMNS.includes(title) && col.text) {
               const value = parseFloat(col.text) || 0
               stats[name].months[title] += value
+              stats[name].itemMonths[itemKey][title] += value
             }
           })
         })
@@ -196,8 +207,8 @@ function Monday() {
     const header1 = ['No', '이름', '아이템']
     const header2 = ['', '', '']
     MONTH_COLUMNS.forEach((month) => {
-      header1.push(month, '')
-      header2.push('시간', 'M/M')
+      header1.push(month, '', '')
+      header2.push('아이템별', '시간', 'M/M')
     })
     header1.push('합계')
     header2.push('시간')
@@ -209,13 +220,18 @@ function Monday() {
         (sum, month) => sum + personStats.months[month],
         0
       )
-      const itemList = Array.from(personStats.items).join(', ')
+      const itemList = Array.from(personStats.items)
+      const itemListStr = itemList.join(', ')
 
-      const row = [index + 1, name, itemList]
+      const row = [index + 1, name, itemListStr]
       MONTH_COLUMNS.forEach((month) => {
         const value = personStats.months[month]
         const mm = calculateMM(value)
-        row.push(value > 0 ? value : 0, mm > 0 ? mm : 0)
+        const itemHours = itemList
+          .map((itemName) => personStats.itemMonths[itemName]?.[month] || 0)
+          .filter((h) => h > 0)
+          .join(', ')
+        row.push(itemHours || '-', value > 0 ? value : 0, mm > 0 ? mm : 0)
       })
       row.push(total > 0 ? total : 0)
 
@@ -230,8 +246,8 @@ function Monday() {
     const merges = []
     let colIdx = 3
     MONTH_COLUMNS.forEach(() => {
-      merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 1 } })
-      colIdx += 2
+      merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 2 } })
+      colIdx += 3
     })
     ws['!merges'] = merges
 
@@ -240,7 +256,7 @@ function Monday() {
       { wch: 5 }, // No
       { wch: 15 }, // 이름
       { wch: 40 }, // 아이템
-      ...MONTH_COLUMNS.flatMap(() => [{ wch: 8 }, { wch: 8 }]),
+      ...MONTH_COLUMNS.flatMap(() => [{ wch: 10 }, { wch: 8 }, { wch: 8 }]),
       { wch: 10 }, // 합계
     ]
 
@@ -352,7 +368,7 @@ function Monday() {
                   <th>이름</th>
                   <th>아이템</th>
                   {MONTH_COLUMNS.map((month) => (
-                    <th key={month} colSpan="2">{month}</th>
+                    <th key={month} colSpan="3">{month}</th>
                   ))}
                   <th className="col-total">합계</th>
                 </tr>
@@ -362,6 +378,7 @@ function Monday() {
                   <th aria-label="아이템 서브헤더" />
                   {MONTH_COLUMNS.map((month) => (
                     <React.Fragment key={`${month}-sub`}>
+                      <th className="col-sub col-item-hours">아이템별</th>
                       <th className="col-sub">시간</th>
                       <th className="col-sub">M/M</th>
                     </React.Fragment>
@@ -394,8 +411,24 @@ function Monday() {
                       {MONTH_COLUMNS.map((month) => {
                         const value = personStats.months[month]
                         const mm = calculateMM(value)
+                        const itemHours = itemList.map((itemName) => ({
+                          name: itemName,
+                          hours: personStats.itemMonths[itemName]?.[month] || 0,
+                        })).filter((i) => i.hours > 0)
+
                         return (
                           <React.Fragment key={month}>
+                            <td className="col-item-hours">
+                              {itemHours.length > 0 ? (
+                                <div className="item-hours-list">
+                                  {itemHours.map((ih) => (
+                                    <span key={ih.name} className="item-hours-tag">
+                                      {ih.hours}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </td>
                             <td>
                               {value > 0 ? value : '-'}
                             </td>

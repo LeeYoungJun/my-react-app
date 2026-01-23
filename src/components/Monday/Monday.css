@@ -292,3 +292,27 @@
   text-align: center;
   margin-top: 1rem;
 }
+
+.monday-table th.col-item-hours {
+  background: #4a4a6a;
+}
+
+.monday-table td.col-item-hours {
+  background: rgba(74, 74, 106, 0.2);
+  min-width: 50px;
+}
+
+.item-hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.item-hours-tag {
+  background: #4a4a6a;
+  color: #e0e0f0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+  text-align: center;
+}
