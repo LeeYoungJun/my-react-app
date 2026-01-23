@@ -229,9 +229,8 @@ function Monday() {
         const mm = calculateMM(value)
         const itemHours = itemList
           .map((itemName) => personStats.itemMonths[itemName]?.[month] || 0)
-          .filter((h) => h > 0)
           .join(', ')
-        row.push(itemHours || '-', value > 0 ? value : 0, mm > 0 ? mm : 0)
+        row.push(itemHours, value > 0 ? value : 0, mm > 0 ? mm : 0)
       })
       row.push(total > 0 ? total : 0)
 
@@ -414,20 +413,18 @@ function Monday() {
                         const itemHours = itemList.map((itemName) => ({
                           name: itemName,
                           hours: personStats.itemMonths[itemName]?.[month] || 0,
-                        })).filter((i) => i.hours > 0)
+                        }))
 
                         return (
                           <React.Fragment key={month}>
                             <td className="col-item-hours">
-                              {itemHours.length > 0 ? (
-                                <div className="item-hours-list">
-                                  {itemHours.map((ih) => (
-                                    <span key={ih.name} className="item-hours-tag">
-                                      {ih.hours}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : '-'}
+                              <div className="item-hours-list">
+                                {itemHours.map((ih) => (
+                                  <span key={ih.name} className="item-hours-tag">
+                                    {ih.hours}
+                                  </span>
+                                ))}
+                              </div>
                             </td>
                             <td>
                               {value > 0 ? value : '-'}
