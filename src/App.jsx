@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import HelloWorld from './components/HelloWorld'
 import LoginForm from './components/LoginForm'
-import Map from './components/Map'
 import Monday from './components/Monday'
 import './App.css'
+
+const Map = lazy(() => import('./components/Map'))
 
 function App() {
   const [showLogin, setShowLogin] = useState(false)
@@ -35,7 +36,9 @@ function App() {
         >
           ← Back
         </button>
-        <Map />
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">지도 로딩 중...</div>}>
+          <Map />
+        </Suspense>
       </>
     )
   }
