@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import * as XLSX from 'xlsx'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts'
 import './Monday.css'
 
 const MONDAY_API_URL = 'https://api.monday.com/v2'
@@ -19,6 +30,7 @@ function Monday() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showChart, setShowChart] = useState(false)
   const fetchedRef = useRef(false)
 
   useEffect(() => {
@@ -152,12 +164,37 @@ function Monday() {
     return stats
   }, [groups])
 
+  // 월별 가동율 계산: (M/M 합계 / 인원 수) * 100
+  const monthlyUtilization = useMemo(() => {
+    const subitemNames = Object.keys(subitemStats)
+    const personCount = subitemNames.length
+
+    if (personCount === 0) return []
+
+    return MONTH_COLUMNS.map((month) => {
+      let totalMM = 0
+      subitemNames.forEach((name) => {
+        const value = subitemStats[name].months[month]
+        totalMM += calculateMM(value)
+      })
+
+      const utilization = (totalMM / personCount) * 100
+
+      return {
+        month,
+        utilization: Math.round(utilization * 100) / 100,
+        totalMM: Math.round(totalMM * 100) / 100,
+        personCount,
+      }
+    })
+  }, [subitemStats])
+
   const exportToExcel = useCallback(() => {
     const subitemNames = Object.keys(subitemStats).sort()
 
     // 헤더 행 생성
-    const header1 = ['이름', '아이템']
-    const header2 = ['', '']
+    const header1 = ['No', '이름', '아이템']
+    const header2 = ['', '', '']
     MONTH_COLUMNS.forEach((month) => {
       header1.push(month, '')
       header2.push('시간', 'M/M')
@@ -166,7 +203,7 @@ function Monday() {
     header2.push('시간')
 
     // 데이터 행 생성
-    const dataRows = subitemNames.map((name) => {
+    const dataRows = subitemNames.map((name, index) => {
       const personStats = subitemStats[name]
       const total = MONTH_COLUMNS.reduce(
         (sum, month) => sum + personStats.months[month],
@@ -174,7 +211,7 @@ function Monday() {
       )
       const itemList = Array.from(personStats.items).join(', ')
 
-      const row = [name, itemList]
+      const row = [index + 1, name, itemList]
       MONTH_COLUMNS.forEach((month) => {
         const value = personStats.months[month]
         const mm = calculateMM(value)
@@ -191,7 +228,7 @@ function Monday() {
 
     // 셀 병합 (월별 헤더)
     const merges = []
-    let colIdx = 2
+    let colIdx = 3
     MONTH_COLUMNS.forEach(() => {
       merges.push({ s: { r: 0, c: colIdx }, e: { r: 0, c: colIdx + 1 } })
       colIdx += 2
@@ -200,6 +237,7 @@ function Monday() {
 
     // 열 너비 설정
     ws['!cols'] = [
+      { wch: 5 }, // No
       { wch: 15 }, // 이름
       { wch: 40 }, // 아이템
       ...MONTH_COLUMNS.flatMap(() => [{ wch: 8 }, { wch: 8 }]),
@@ -247,15 +285,61 @@ function Monday() {
             <h1 className="text-2xl font-bold text-white mb-2">{boardName}</h1>
             <h2 className="text-lg text-gray-400">사용자 월별 작업 시간</h2>
           </div>
-          <button
-            type="button"
-            className="export-btn"
-            onClick={exportToExcel}
-            disabled={Object.keys(subitemStats).length === 0}
-          >
-            Excel 다운로드
-          </button>
+          <div className="header-buttons">
+            <button
+              type="button"
+              className={`chart-btn ${showChart ? 'active' : ''}`}
+              onClick={() => setShowChart(!showChart)}
+              disabled={Object.keys(subitemStats).length === 0}
+            >
+              월별 가동율
+            </button>
+            <button
+              type="button"
+              className="export-btn"
+              onClick={exportToExcel}
+              disabled={Object.keys(subitemStats).length === 0}
+            >
+              Excel 다운로드
+            </button>
+          </div>
         </div>
+
+        {showChart && monthlyUtilization.length > 0 && (
+          <div className="chart-container">
+            <h3 className="chart-title">월별 가동율 (%)</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlyUtilization} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#3d3d5c" />
+                <XAxis dataKey="month" stroke="#a0a0c0" />
+                <YAxis stroke="#a0a0c0" domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e1e2e',
+                    border: '1px solid #3d3d5c',
+                    borderRadius: '8px',
+                  }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value, name) => {
+                    if (name === 'utilization') return [`${value}%`, '가동율']
+                    return [value, name]
+                  }}
+                />
+                <Legend
+                  formatter={(value) => (value === 'utilization' ? '가동율' : value)}
+                />
+                <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="5 5" label={{ value: '100%', fill: '#ef4444', position: 'right' }} />
+                <Bar dataKey="utilization" fill="#6c5ce7" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p className="chart-note">
+              계산식: (M/M 합계 / 인원수) × 100 | 인원수: 
+              {' '}
+              {monthlyUtilization[0]?.personCount || 0}
+              명
+            </p>
+          </div>
+        )}
 
         {subitemNames.length === 0 ? (
           <p className="text-gray-500">하위 아이템이 없습니다.</p>
@@ -264,6 +348,7 @@ function Monday() {
             <table className="monday-table">
               <thead>
                 <tr>
+                  <th className="col-no">No</th>
                   <th>이름</th>
                   <th>아이템</th>
                   {MONTH_COLUMNS.map((month) => (
@@ -272,6 +357,7 @@ function Monday() {
                   <th className="col-total">합계</th>
                 </tr>
                 <tr>
+                  <th className="col-no" aria-label="No 서브헤더" />
                   <th aria-label="이름 서브헤더" />
                   <th aria-label="아이템 서브헤더" />
                   {MONTH_COLUMNS.map((month) => (
@@ -284,7 +370,7 @@ function Monday() {
                 </tr>
               </thead>
               <tbody>
-                {subitemNames.map((name) => {
+                {subitemNames.map((name, index) => {
                   const personStats = subitemStats[name]
                   const total = MONTH_COLUMNS.reduce(
                     (sum, month) => sum + personStats.months[month],
@@ -294,6 +380,7 @@ function Monday() {
 
                   return (
                     <tr key={name}>
+                      <td className="col-no">{index + 1}</td>
                       <td>{name}</td>
                       <td className="col-items">
                         <div className="item-list">
