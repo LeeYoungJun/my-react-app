@@ -291,6 +291,7 @@ function Monday() {
   }
 
   const subitemNames = Object.keys(subitemStats).sort()
+  const currentMonth = `${new Date().getMonth() + 1}월`
 
   return (
     <div className="monday-container">
@@ -367,7 +368,7 @@ function Monday() {
                   <th>이름</th>
                   <th>아이템</th>
                   {MONTH_COLUMNS.map((month) => (
-                    <th key={month} colSpan="3">{month}</th>
+                    <th key={month} colSpan="3" className={month === currentMonth ? 'col-current-month' : ''}>{month}</th>
                   ))}
                   <th className="col-total">합계</th>
                 </tr>
@@ -377,9 +378,9 @@ function Monday() {
                   <th aria-label="아이템 서브헤더" />
                   {MONTH_COLUMNS.map((month) => (
                     <React.Fragment key={`${month}-sub`}>
-                      <th className="col-sub col-item-hours">아이템별</th>
-                      <th className="col-sub">시간</th>
-                      <th className="col-sub">M/M</th>
+                      <th className={`col-sub col-item-hours ${month === currentMonth ? 'col-current-month-sub' : ''}`}>아이템별</th>
+                      <th className={`col-sub ${month === currentMonth ? 'col-current-month-sub' : ''}`}>시간</th>
+                      <th className={`col-sub ${month === currentMonth ? 'col-current-month-sub' : ''}`}>M/M</th>
                     </React.Fragment>
                   ))}
                   <th className="col-sub">시간</th>
