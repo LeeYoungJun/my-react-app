@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import './Monday.css'
 
 const MONDAY_API_URL = 'https://api.monday.com/v2'
 const BOARD_ID = '18393300831'
+const CACHE_KEY = `monday_board_${BOARD_ID}`
+const CACHE_DURATION = 5 * 60 * 1000 // 5분 캐시
 
 const MONTH_COLUMNS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
@@ -16,8 +18,13 @@ function Monday() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const fetchedRef = useRef(false)
 
   useEffect(() => {
+    // StrictMode에서 중복 호출 방지
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+
     const fetchBoardData = async () => {
       const apiKey = import.meta.env.VITE_MONDAY_API_KEY
 
@@ -25,6 +32,22 @@ function Monday() {
         setError('VITE_MONDAY_API_KEY가 설정되지 않았습니다.')
         setLoading(false)
         return
+      }
+
+      // 캐시 확인
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY)
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached)
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            setBoardName(data.name)
+            setGroups(data.groups)
+            setLoading(false)
+            return
+          }
+        }
+      } catch {
+        // 캐시 파싱 실패시 무시
       }
 
       const query = `
@@ -73,6 +96,13 @@ function Monday() {
         }
 
         const board = result.data.boards[0]
+
+        // 캐시 저장
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: board,
+          timestamp: Date.now()
+        }))
+
         setBoardName(board.name)
         setGroups(board.groups)
       } catch (err) {
