@@ -1,10 +1,15 @@
-import { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import './Monday.css'
 
 const MONDAY_API_URL = 'https://api.monday.com/v2'
 const BOARD_ID = '18393300831'
 
 const MONTH_COLUMNS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+
+const calculateMM = (value) => {
+  if (!value || value <= 0) return 0
+  return Math.round((value / 143.5) * 100) / 100
+}
 
 function Monday() {
   const [boardName, setBoardName] = useState('')
@@ -99,8 +104,8 @@ function Monday() {
             })
           }
 
-          // 아이템명 추가
-          stats[name].items.add(item.name)
+          // 아이템명 추가 (그룹명 포함)
+          stats[name].items.add(`[${group.title}] ${item.name}`)
 
           subitem.column_values?.forEach((col) => {
             const title = col.column?.title
@@ -150,16 +155,27 @@ function Monday() {
         {subitemNames.length === 0 ? (
           <p className="text-gray-500">하위 아이템이 없습니다.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-scroll-container">
             <table className="monday-table">
               <thead>
                 <tr>
                   <th>이름</th>
+                  <th>아이템</th>
                   {MONTH_COLUMNS.map((month) => (
-                    <th key={month}>{month}</th>
+                    <th key={month} colSpan="2">{month}</th>
                   ))}
                   <th className="col-total">합계</th>
-                  <th>아이템</th>
+                </tr>
+                <tr>
+                  <th aria-label="이름 서브헤더" />
+                  <th aria-label="아이템 서브헤더" />
+                  {MONTH_COLUMNS.map((month) => (
+                    <React.Fragment key={`${month}-sub`}>
+                      <th className="col-sub">시간</th>
+                      <th className="col-sub">M/M</th>
+                    </React.Fragment>
+                  ))}
+                  <th className="col-sub">시간</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,15 +190,7 @@ function Monday() {
                   return (
                     <tr key={name}>
                       <td>{name}</td>
-                      {MONTH_COLUMNS.map((month) => (
-                        <td key={month}>
-                          {personStats.months[month] > 0 ? personStats.months[month] : '-'}
-                        </td>
-                      ))}
-                      <td style={{ color: '#60a5fa', fontWeight: 'bold' }}>
-                        {total > 0 ? total.toFixed(2) : '-'}
-                      </td>
-                      <td>
+                      <td className="col-items">
                         <div className="item-list">
                           {itemList.map((itemName) => (
                             <span key={itemName} className="item-tag">
@@ -190,6 +198,23 @@ function Monday() {
                             </span>
                           ))}
                         </div>
+                      </td>
+                      {MONTH_COLUMNS.map((month) => {
+                        const value = personStats.months[month]
+                        const mm = calculateMM(value)
+                        return (
+                          <React.Fragment key={month}>
+                            <td>
+                              {value > 0 ? value : '-'}
+                            </td>
+                            <td className="col-mm">
+                              {mm > 0 ? mm.toFixed(2) : '0'}
+                            </td>
+                          </React.Fragment>
+                        )
+                      })}
+                      <td style={{ color: '#60a5fa', fontWeight: 'bold' }}>
+                        {total > 0 ? total.toFixed(2) : '-'}
                       </td>
                     </tr>
                   )
