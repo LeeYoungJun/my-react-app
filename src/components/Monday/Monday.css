@@ -1,10 +1,11 @@
 .monday-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-  padding: 2rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 1rem;
 }
 
 .monday-content {
@@ -16,43 +17,87 @@
 }
 
 .monday-board {
-  background: rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 1rem;
-  max-width: 90vw;
-  max-height: 80vh;
-  overflow: auto;
 }
 
 .monday-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #1e1e2e;
   border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  table-layout: fixed;
 }
 
 .monday-table th {
   background: #6c5ce7;
   color: white;
-  padding: 1rem;
-  text-align: left;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
   font-weight: 600;
+  font-size: 0.85rem;
   white-space: nowrap;
 }
 
+.monday-table th:first-child {
+  text-align: left;
+  width: 100px;
+}
+
+.monday-table th:last-child {
+  text-align: left;
+  width: 280px;
+}
+
+.monday-table th.col-total {
+  width: 70px;
+}
+
 .monday-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid #2d2d3d;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  text-align: center;
+  vertical-align: top;
+}
+
+.monday-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.monday-table td:last-child {
+  text-align: left;
 }
 
 .monday-table tbody tr:hover {
-  background: #f8f9fa;
+  background: #2a2a3e;
 }
 
 .monday-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-tag {
+  background: #3d3d5c;
+  color: #a0a0c0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
 }
