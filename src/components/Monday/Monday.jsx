@@ -13,6 +13,8 @@ function Monday() {
   useEffect(() => {
     const fetchBoardData = async () => {
       const apiKey = import.meta.env.VITE_MONDAY_KEY
+      console.log('API Key exists:', !!apiKey)
+      console.log('API Key length:', apiKey?.length)
 
       if (!apiKey) {
         setError('VITE_MONDAY_KEY가 설정되지 않았습니다.')
