@@ -12,6 +12,7 @@ function Monday() {
 
   useEffect(() => {
     const fetchBoardData = async () => {
+      console.log('All env:', import.meta.env)
       const apiKey = import.meta.env.VITE_MONDAY_KEY
       console.log('API Key exists:', !!apiKey)
       console.log('API Key length:', apiKey?.length)
