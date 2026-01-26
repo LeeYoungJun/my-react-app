@@ -330,3 +330,44 @@
   color: #fff;
   font-weight: 600;
 }
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+}
+
+.date-selector label {
+  color: #a0a0c0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.date-selector select {
+  background: #2d2d3d;
+  color: #fff;
+  border: 1px solid #4a4a6a;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.date-selector select:hover:not(:disabled) {
+  border-color: #6c5ce7;
+}
+
+.date-selector select:focus {
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.3);
+}
+
+.date-selector select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

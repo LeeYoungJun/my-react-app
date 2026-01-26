@@ -11,12 +11,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
+import { supabase } from '../../lib/supabase'
 import './Monday.css'
 
 const MONDAY_API_URL = 'https://api.monday.com/v2'
 const BOARD_ID = '18393300831'
-const CACHE_KEY = `monday_board_${BOARD_ID}`
-const CACHE_DURATION = 5 * 60 * 1000 // 5분 캐시
 
 const MONTH_COLUMNS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
@@ -31,7 +30,125 @@ function Monday() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showChart, setShowChart] = useState(false)
+  const [selectedDate, setSelectedDate] = useState('')
+  const [availableDates, setAvailableDates] = useState([])
   const fetchedRef = useRef(false)
+
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 반환
+  const getTodayDate = useCallback(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }, [])
+
+  // Supabase에서 캐시된 데이터 조회 (가장 최근 레코드)
+  const getCachedData = useCallback(async () => {
+    if (!supabase) return null
+
+    const { data, error: fetchError } = await supabase
+      .from('monday_board_cache')
+      .select('*')
+      .eq('board_id', BOARD_ID)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (fetchError || !data) return null
+    return data
+  }, [])
+
+  // Supabase에서 사용 가능한 날짜 목록 조회
+  const getAvailableDates = useCallback(async () => {
+    if (!supabase) return []
+
+    const { data, error: fetchError } = await supabase
+      .from('monday_board_cache')
+      .select('updated_at')
+      .eq('board_id', BOARD_ID)
+      .order('updated_at', { ascending: false })
+
+    if (fetchError || !data) return []
+    return data.map((d) => d.updated_at)
+  }, [])
+
+  // 특정 날짜의 데이터 조회
+  const getDataByDate = useCallback(async (date) => {
+    if (!supabase) return null
+
+    const { data, error: fetchError } = await supabase
+      .from('monday_board_cache')
+      .select('*')
+      .eq('board_id', BOARD_ID)
+      .eq('updated_at', date)
+      .single()
+
+    if (fetchError || !data) return null
+    return data
+  }, [])
+
+  // Supabase에 새 데이터 INSERT (히스토리 보관)
+  const saveCacheData = useCallback(async (boardData) => {
+    if (!supabase) return
+
+    const today = getTodayDate()
+
+    await supabase
+      .from('monday_board_cache')
+      .insert({
+        board_id: BOARD_ID,
+        board_name: boardData.name,
+        board_data: boardData,
+        updated_at: today,
+      })
+  }, [getTodayDate])
+
+  // Monday.com API에서 데이터 가져오기
+  const fetchFromMondayAPI = useCallback(async (apiKey) => {
+    const query = `
+      query {
+        boards(ids: ${BOARD_ID}) {
+          name
+          groups {
+            id
+            title
+            items_page(limit: 100) {
+              items {
+                id
+                name
+                subitems {
+                  id
+                  name
+                  column_values {
+                    id
+                    text
+                    column {
+                      title
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const response = await fetch(MONDAY_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: apiKey,
+      },
+      body: JSON.stringify({ query }),
+    })
+
+    const result = await response.json()
+
+    if (result.errors) {
+      throw new Error(result.errors[0].message)
+    }
+
+    return result.data.boards[0]
+  }, [])
 
   useEffect(() => {
     // StrictMode에서 중복 호출 방지
@@ -47,77 +164,32 @@ function Monday() {
         return
       }
 
-      // 캐시 확인
       try {
-        const cached = sessionStorage.getItem(CACHE_KEY)
-        if (cached) {
-          const { data, timestamp } = JSON.parse(cached)
-          if (Date.now() - timestamp < CACHE_DURATION) {
-            setBoardName(data.name)
-            setGroups(data.groups)
-            setLoading(false)
-            return
-          }
-        }
-      } catch {
-        // 캐시 파싱 실패시 무시
-      }
+        // 1. Supabase 캐시 확인
+        const cachedData = await getCachedData()
+        const today = getTodayDate()
 
-      const query = `
-        query {
-          boards(ids: ${BOARD_ID}) {
-            name
-            groups {
-              id
-              title
-              items_page(limit: 100) {
-                items {
-                  id
-                  name
-                  subitems {
-                    id
-                    name
-                    column_values {
-                      id
-                      text
-                      column {
-                        title
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `
+        if (cachedData && cachedData.updated_at === today) {
+          // 오늘 날짜와 같으면 캐시 데이터 사용
+          const boardData = cachedData.board_data
+          setBoardName(boardData.name)
+          setGroups(boardData.groups)
+          setSelectedDate(today)
+        } else {
+          // 2. 캐시가 없거나 오늘 이전이면 Monday.com API 호출
+          const board = await fetchFromMondayAPI(apiKey)
 
-      try {
-        const response = await fetch(MONDAY_API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: apiKey,
-          },
-          body: JSON.stringify({ query }),
-        })
+          // 3. Supabase에 캐시 저장
+          await saveCacheData(board)
 
-        const result = await response.json()
-
-        if (result.errors) {
-          throw new Error(result.errors[0].message)
+          setBoardName(board.name)
+          setGroups(board.groups)
+          setSelectedDate(today)
         }
 
-        const board = result.data.boards[0]
-
-        // 캐시 저장
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-          data: board,
-          timestamp: Date.now()
-        }))
-
-        setBoardName(board.name)
-        setGroups(board.groups)
+        // 4. 사용 가능한 날짜 목록 조회
+        const dates = await getAvailableDates()
+        setAvailableDates(dates)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -126,7 +198,54 @@ function Monday() {
     }
 
     fetchBoardData()
-  }, [])
+  }, [getCachedData, getTodayDate, fetchFromMondayAPI, saveCacheData, getAvailableDates])
+
+  // 날짜 선택 변경 핸들러
+  const handleDateChange = async (date) => {
+    if (date === selectedDate) return
+
+    setLoading(true)
+    setSelectedDate(date)
+
+    try {
+      const today = getTodayDate()
+
+      if (date === today) {
+        // 오늘 날짜 선택시 최신 데이터 확인
+        const cachedData = await getCachedData()
+        if (cachedData && cachedData.updated_at === today) {
+          const boardData = cachedData.board_data
+          setBoardName(boardData.name)
+          setGroups(boardData.groups)
+        } else {
+          // Monday.com API에서 새로 가져오기
+          const apiKey = import.meta.env.VITE_MONDAY_API_KEY
+          const board = await fetchFromMondayAPI(apiKey)
+          await saveCacheData(board)
+          setBoardName(board.name)
+          setGroups(board.groups)
+
+          // 날짜 목록 갱신
+          const dates = await getAvailableDates()
+          setAvailableDates(dates)
+        }
+      } else {
+        // 과거 날짜 선택시 Supabase에서 조회
+        const data = await getDataByDate(date)
+        if (data) {
+          const boardData = data.board_data
+          setBoardName(boardData.name)
+          setGroups(boardData.groups)
+        } else {
+          setError(`${date} 날짜의 데이터가 없습니다.`)
+        }
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // 하위 아이템 이름별로 월별 합계 및 아이템명 계산
   const subitemStats = useMemo(() => {
@@ -302,6 +421,22 @@ function Monday() {
             <h2 className="text-lg text-gray-400">사용자 월별 작업 시간</h2>
           </div>
           <div className="header-buttons">
+            <div className="date-selector">
+              <label htmlFor="date-select">데이터 날짜:</label>
+              <select
+                id="date-select"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                disabled={loading || availableDates.length === 0}
+              >
+                {availableDates.map((date) => (
+                  <option key={date} value={date}>
+                    {date}
+                    {date === getTodayDate() ? ' (오늘)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               className={`chart-btn ${showChart ? 'active' : ''}`}
