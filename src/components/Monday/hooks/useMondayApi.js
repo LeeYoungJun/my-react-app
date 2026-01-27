@@ -49,20 +49,28 @@ export function useMondayApi() {
     return data
   }, [])
 
-  // Supabase에 새 데이터 INSERT (히스토리 보관)
+  // Supabase에 데이터 저장 (같은 날짜면 UPDATE, 없으면 INSERT)
   const saveCacheData = useCallback(async (boardData) => {
     if (!supabase) return
 
     const today = getTodayDate()
 
-    await supabase
+    // board_id + updated_at 복합 UNIQUE 제약 활용한 upsert
+    const { error } = await supabase
       .from('monday_board_cache')
-      .insert({
-        board_id: BOARD_ID,
-        board_name: boardData.name,
-        board_data: boardData,
-        updated_at: today,
-      })
+      .upsert(
+        {
+          board_id: BOARD_ID,
+          board_name: boardData.name,
+          board_data: boardData,
+          updated_at: today,
+        },
+        { onConflict: 'board_id,updated_at' }
+      )
+
+    if (error) {
+      console.error('Failed to save cache data:', error)
+    }
   }, [])
 
   // Monday.com API에서 데이터 가져오기

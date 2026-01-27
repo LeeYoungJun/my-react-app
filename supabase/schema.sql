@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS monday_board_cache (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- board_id + updated_at 복합 UNIQUE 제약 (같은 날짜 중복 방지 + 히스토리 보관)
+ALTER TABLE monday_board_cache ADD CONSTRAINT IF NOT EXISTS monday_board_cache_board_date_unique UNIQUE (board_id, updated_at);
+
 -- board_id + updated_at 복합 인덱스 (빠른 조회를 위해)
 CREATE INDEX IF NOT EXISTS idx_monday_board_cache_board_date
 ON monday_board_cache(board_id, updated_at DESC);
