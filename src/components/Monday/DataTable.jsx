@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { MONTH_COLUMNS } from './constants'
 import { calculateMM } from './utils'
 
-function DataTable({ subitemStats }) {
+function DataTable({ subitemStats, onUserClick }) {
   const subitemNames = Object.keys(subitemStats).sort()
   const currentMonth = `${new Date().getMonth() + 1}월`
 
@@ -50,7 +50,15 @@ function DataTable({ subitemStats }) {
             return (
               <tr key={name}>
                 <td className="col-no">{index + 1}</td>
-                <td>{name}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="user-name-btn"
+                    onClick={() => onUserClick && onUserClick(name)}
+                  >
+                    {name}
+                  </button>
+                </td>
                 <td className="col-items">
                   <div className="item-list">
                     {itemList.map((itemName) => (
@@ -108,6 +116,11 @@ DataTable.propTypes = {
       itemMonths: PropTypes.objectOf(PropTypes.objectOf(PropTypes.number)).isRequired,
     })
   ).isRequired,
+  onUserClick: PropTypes.func,
+}
+
+DataTable.defaultProps = {
+  onUserClick: null,
 }
 
 export default DataTable

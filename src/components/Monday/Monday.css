@@ -400,3 +400,66 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* User Name Button */
+.user-name-btn {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.user-name-btn:hover {
+  background: rgba(96, 165, 250, 0.2);
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* User Daily Chart */
+.user-daily-chart-container {
+  background: #1e1e2e;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d5c;
+}
+
+.user-daily-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.user-daily-chart-header .chart-title {
+  margin: 0;
+}
+
+.close-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.no-data-message {
+  color: #a0a0c0;
+  text-align: center;
+  padding: 2rem;
+}

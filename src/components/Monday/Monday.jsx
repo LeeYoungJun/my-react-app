@@ -3,7 +3,9 @@ import { useMondayApi } from './hooks/useMondayApi'
 import { useSubitemStats } from './hooks/useSubitemStats'
 import { exportToExcel } from './exportToExcel'
 import { getTodayDate } from './utils'
+import { MONTH_COLUMNS } from './constants'
 import UtilizationChart from './UtilizationChart'
+import UserDailyChart from './UserDailyChart'
 import DataTable from './DataTable'
 import './Monday.css'
 
@@ -15,12 +17,17 @@ function Monday() {
   const [showChart, setShowChart] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
   const [availableDates, setAvailableDates] = useState([])
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [selectedMonth, setSelectedMonth] = useState(`${new Date().getMonth() + 1}월`)
+  const [userMonthlyData, setUserMonthlyData] = useState([])
+  const [loadingUserChart, setLoadingUserChart] = useState(false)
   const fetchedRef = useRef(false)
 
   const {
     getCachedData,
     getAvailableDates,
     getDataByDate,
+    getMonthlyData,
     saveCacheData,
     fetchFromMondayAPI,
   } = useMondayApi()
@@ -115,6 +122,30 @@ function Monday() {
     exportToExcel(subitemStats, boardName)
   }, [subitemStats, boardName])
 
+  const handleUserClick = useCallback(async (userName) => {
+    setSelectedUser(userName)
+    setLoadingUserChart(true)
+
+    try {
+      const year = new Date().getFullYear()
+      const monthMatch = selectedMonth.match(/(\d+)/)
+      const month = monthMatch ? parseInt(monthMatch[1], 10) : new Date().getMonth() + 1
+
+      const data = await getMonthlyData(year, month)
+      setUserMonthlyData(data)
+    } catch (err) {
+      console.error('Failed to fetch monthly data:', err)
+      setUserMonthlyData([])
+    } finally {
+      setLoadingUserChart(false)
+    }
+  }, [selectedMonth, getMonthlyData])
+
+  const handleCloseUserChart = useCallback(() => {
+    setSelectedUser(null)
+    setUserMonthlyData([])
+  }, [])
+
   if (loading) {
     return (
       <div className="monday-container">
@@ -165,6 +196,20 @@ function Monday() {
                 ))}
               </select>
             </div>
+            <div className="date-selector">
+              <label htmlFor="month-select">일별 조회 월:</label>
+              <select
+                id="month-select"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                {MONTH_COLUMNS.map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               className={`chart-btn ${showChart ? 'active' : ''}`}
@@ -193,7 +238,20 @@ function Monday() {
 
         {showChart && <UtilizationChart data={monthlyUtilization} />}
 
-        <DataTable subitemStats={subitemStats} />
+        {selectedUser && (
+          <UserDailyChart
+            userName={selectedUser}
+            monthlyData={userMonthlyData}
+            selectedMonth={selectedMonth}
+            onClose={handleCloseUserChart}
+            loading={loadingUserChart}
+          />
+        )}
+
+        <DataTable
+          subitemStats={subitemStats}
+          onUserClick={handleUserClick}
+        />
       </div>
     </div>
   )

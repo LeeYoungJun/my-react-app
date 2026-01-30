@@ -49,6 +49,26 @@ export function useMondayApi() {
     return data
   }, [])
 
+  // 특정 월의 모든 날짜 데이터 조회 (일별 시간 계산용)
+  const getMonthlyData = useCallback(async (year, month) => {
+    if (!supabase) return []
+
+    // 해당 월의 시작일과 종료일 계산
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`
+
+    const { data, error: fetchError } = await supabase
+      .from('monday_board_cache')
+      .select('*')
+      .eq('board_id', BOARD_ID)
+      .gte('updated_at', startDate)
+      .lte('updated_at', endDate)
+      .order('updated_at', { ascending: true })
+
+    if (fetchError || !data) return []
+    return data
+  }, [])
+
   // Supabase에 데이터 저장 (같은 날짜면 UPDATE, 없으면 INSERT)
   const saveCacheData = useCallback(async (boardData) => {
     if (!supabase) return
@@ -126,6 +146,7 @@ export function useMondayApi() {
     getCachedData,
     getAvailableDates,
     getDataByDate,
+    getMonthlyData,
     saveCacheData,
     fetchFromMondayAPI,
   }
