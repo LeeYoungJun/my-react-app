@@ -146,7 +146,7 @@ function Monday() {
         <div className="monday-header">
           <div>
             <h1 className="text-2xl font-bold text-white mb-2">{boardName}</h1>
-            <h2 className="text-lg text-gray-400">사용자 월별 작업 시간</h2>
+            <h2 className="monday-subtitle">사용자 월별 작업 시간</h2>
           </div>
           <div className="header-buttons">
             <div className="date-selector">
@@ -172,6 +172,13 @@ function Monday() {
               disabled={!hasData}
             >
               월별 가동율
+            </button>
+            <button
+              type="button"
+              className="dashboard-btn"
+              onClick={() => window.open('https://sphinfo.monday.com/boards/18393300831', '_blank')}
+            >
+              대시보드로 이동
             </button>
             <button
               type="button"
